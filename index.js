@@ -4,13 +4,25 @@ const config = require("./config.json");
 const client = new Discord.Client({intents: ["GUILDS", "GUILD_MESSAGES"]});
 
 const prefix = "/";
+const searchedWord = "122d";
 
 client.on("messageCreate", (message) => {
     if (message.author.bot) return;
     if (!message.content.startsWith(prefix)) return;
     message.reply(message.content.slice(prefix.length).toLowerCase());
 
-    console.log(message.guild.channels);
+    let channel = message.channel;
+    channel.messages.fetch({ limit: 100 })
+        .then( (messages) => {
+            let allMsg = [];
+            messages.forEach( (msg) => {
+                if (!msg.author.bot && msg.content.includes(searchedWord)){
+                     allMsg.push(`${msg.author.username}: ${msg.content} [Jump](${msg.url})`); 
+                }
+            });
+            console.log('Received Messages: \n'+ allMsg.join("\n"));
+        })
+        .catch(console.error);
 });
 
 // channelName = 
