@@ -3,11 +3,7 @@ const config = require("./config.json");
 
 /*
 TODO:
-capture include and exclude words 
-##fetch from all channels
-##write a function that accepts channel id then fetch
 feetch more than 100
-##sort by date .createdTimeStamp
 ?change from opening thread to embed with pagination
 https://discord.js.org/#/docs/main/stable/class/Webhook
 */
