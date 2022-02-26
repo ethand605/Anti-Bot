@@ -15,7 +15,7 @@ https://discord.js.org/#/docs/main/stable/class/Webhook
 const client = new Discord.Client({intents: ["GUILDS", "GUILD_MESSAGES"]});
 
 const prefix = "/";
-const searchedWords = [];
+const includedWords = [];
 const excludedWords = []; //TODO: why is / not displaying
 
 function exclusionCheck(msg){
@@ -24,6 +24,14 @@ function exclusionCheck(msg){
         if (msg.includes(word)) { found = true;}
     })
     return !found;
+}
+
+function inclusionCheck(msg){
+    found = true;
+    includedWords.forEach((word) => {
+        if (!msg.includes(word)) { found = false;}
+    })
+    return found;
 }
 
 async function fetchAllmessages(allMsg, IDs, guild) {
@@ -51,23 +59,15 @@ async function fetchAllmessages(allMsg, IDs, guild) {
         let messages = await channel.messages.fetch({ limit: 100 }); //find a way to work around discord's limit
         
         messages.forEach( (msg) => {
-            if (!msg.author.bot && foundWord(msg.content.toLowerCase()) 
-            //turn this into checking an array off searchedWords
-                && exclusionCheck(msg.content)) {
+
+            if (!msg.author.bot && inclusionCheck(msg.content.toLowerCase())
+                && exclusionCheck(msg.content.toLowerCase())) {
                     allMsg[msg.createdTimestamp]=  `${msg.author.username}: ${msg.content} (${msg.url})\n`;
             }
         })        
     }
-    // console.log(allMsg);
 }
 
-function foundWord(content) {
-    let found = true;
-    for (let word of searchedWords){
-        if(!content.includes(word)) found = false;
-    }
-    return found;
-}
 
 client.on("messageCreate",  (message) => {
     if (message.author.bot) return; 
@@ -77,21 +77,15 @@ client.on("messageCreate",  (message) => {
     const command = args.shift().toLowerCase();
     if (!command=='search') return;
     
-    let searchedWord = '';
-    //why didn't this work??
-    // while(!searchedWord.startsWith('\-') && args.length!=0){
-    //     searchedWords.push(args.shift().toLowerCase());
-    // }
-    while(searchedWord[0]!=='-' && args.length!=0){
-        console.log(searchedWord.indexOf('-'));
-        searchedWords.push(args.shift().toLowerCase());
+    while(args[0].indexOf('-')!==0 && args.length!=0){
+        includedWords.push(args.shift().toLowerCase());
     }
     while(args.length!=0){
         excludedWords.push(args.shift().toLowerCase());
     }
 
-    console.log(searchedWords, excludedWords);
-    /*
+    // console.log(searchedWords, excludedWords);
+    
     let gld = message.guild;
     let channel = message.channel;
     //fetch all channels
@@ -112,9 +106,11 @@ client.on("messageCreate",  (message) => {
         })
         .then( (allMsg) => {
             //create a thread, sort the messages by created time, then sends them out in the thread
+            const exclWords = excludedWords.map( word => word.substring(1));
+            // console.log(excludedWords);
             channel.threads
                 .create({
-                    name: `messages containing ${searchedWord} and excluding ${excludedWords.join(', ')}`,
+                    name: `messages containing ${includedWords.join(', ')} and excluding ${exclWords.join(', ')}`,
                     autoArchiveDuration: 60,
                     reason: 'provide search result'
                 }).then( threadChannel => {
@@ -130,7 +126,7 @@ client.on("messageCreate",  (message) => {
                 })
                 .catch(console.error);
         })
-    */
+    
 });
 
 
