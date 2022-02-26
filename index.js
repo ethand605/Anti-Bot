@@ -5,6 +5,7 @@ const config = require("./config.json");
 TODO:
 fetch from all channels:
     write a function that accepts channel id then fetch
+    feetch more than 100
 capture include and exclude words 
 sort by date .createdTimeStamp
 add async to wait for fetch before displaying (chain resolve promises?)
@@ -17,7 +18,7 @@ const prefix = "/";
 const searchedWord = "122d";
 const excludedWords = ["/", "role"];
 
-let exclusionCheck = (msg) => {
+function exclusionCheck(msg){
     found = false;
     excludedWords.forEach((word) => {
         if (msg.includes(word)) { found = true;}
@@ -25,16 +26,30 @@ let exclusionCheck = (msg) => {
     return !found;
 }
 
-
+async function fetchAllmessages(allMsg, IDs, guild) {
+    for(let id of IDs){      
+        let channel = await guild.channels.fetch(id);
+        
+        let messages = await channel.messages.fetch({ limit: 100 });
+        messages.forEach( (msg) => {
+            if (!msg.author.bot && msg.content.includes(searchedWord) 
+                && exclusionCheck(msg.content)) {
+                    allMsg[msg.createdTimestamp]=  `${msg.author.username}: ${msg.content} (${msg.url})\n`;
+            }
+        })
+        
+    }
+}
 
 client.on("messageCreate", (message) => {
     if (message.author.bot) return; 
     if (!message.content.startsWith(prefix)) return;
     
     // let channel = message.channel;
-
+    let gld = message.guild;
     //fetch all channels
-    message.guild.channels.fetch()
+    gld.channels.fetch()
+        //get a collection of IDs
         .then( (channels) => {
             let chanIDs = [];
             channels.forEach( (channel) => {
@@ -42,11 +57,12 @@ client.on("messageCreate", (message) => {
             })
             return chanIDs;
         })
+        //using the collection of IDs to fetch all messages in the server the fits the requirement
         .then( (chanIDs) => {
-            console.log(chanIDs.length);
+            let allMsg = {};
+            fetchAllmessages(allMsg, chanIDs, gld);
         })
         /*
-        .then(fetch all messages)
         .then(create thread)
         */
     
